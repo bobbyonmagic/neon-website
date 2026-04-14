@@ -52,7 +52,7 @@ Publications using `FOR ALL TABLES` now support excluding specific tables with `
 ```sql
 -- Replicate all tables except audit and temp tables
 CREATE PUBLICATION production_pub FOR ALL TABLES
-    EXCEPT (TABLE audit_log, TABLE temp_imports, TABLE debug_events);
+    EXCEPT (TABLE audit_log, temp_imports, debug_events);
 ```
 
 ### Modifying Exclusions
@@ -60,7 +60,7 @@ CREATE PUBLICATION production_pub FOR ALL TABLES
 ```sql
 -- Update the exclusion list
 ALTER PUBLICATION production_pub SET ALL TABLES
-    EXCEPT (TABLE audit_log, TABLE temp_imports, TABLE staging_data);
+    EXCEPT (TABLE audit_log, temp_imports, staging_data);
 
 -- Clear all exclusions
 ALTER PUBLICATION production_pub SET ALL TABLES;
@@ -138,7 +138,7 @@ Here is a complete example setting up logical replication with the new PostgreSQ
 ```sql
 -- Create a publication with table exclusions
 CREATE PUBLICATION app_pub FOR ALL TABLES
-    EXCEPT TABLE (debug_log, session_cache);
+    EXCEPT (TABLE debug_log, session_cache);
 
 -- Verify what's included
 SELECT * FROM pg_publication_tables WHERE pubname = 'app_pub';

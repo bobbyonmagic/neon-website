@@ -208,7 +208,7 @@ CREATE PUBLICATION my_pub FOR ALL TABLES, ALL SEQUENCES;
 
 ```sql
 CREATE PUBLICATION prod_pub FOR ALL TABLES
-    EXCEPT (TABLE audit_log, TABLE temp_imports);
+    EXCEPT (TABLE audit_log, temp_imports);
 ```
 
 **Dynamic WAL level**: The `effective_wal_level` parameter adjusts automatically based on whether logical replication slots exist, eliminating the need to manually configure and restart for WAL level changes.
