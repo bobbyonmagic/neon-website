@@ -367,6 +367,28 @@
           title: Terminate Backend Connections
         - slug: postgresql-administration/uninstall-postgresql-ubuntu
           title: Uninstall PostgreSQL on Ubuntu
+- nav: PostgreSQL 19
+  slug: postgresql-19-new-features
+  title: PostgreSQL 19
+  items:
+    - section: DML & Query Improvements
+      items:
+        - slug: postgresql-19/on-conflict-do-select
+          title: 'ON CONFLICT DO SELECT: Atomic Get-or-Create'
+        - slug: postgresql-19/temporal-data-operations
+          title: 'Temporal Data: UPDATE/DELETE FOR PORTION OF'
+    - section: Planning & Maintenance
+      items:
+        - slug: postgresql-19/pg-plan-advice
+          title: 'pg_plan_advice: Query Plan Hints'
+        - slug: postgresql-19/repack-command
+          title: 'REPACK: Online Table Rebuilding'
+    - section: Data & Replication
+      items:
+        - slug: postgresql-19/logical-replication-improvements
+          title: Logical Replication Improvements
+        - slug: postgresql-19/json-copy-to
+          title: 'JSON Format for COPY TO'
 - nav: PostgreSQL 18
   slug: postgresql-18-new-features
   title: PostgreSQL 18
