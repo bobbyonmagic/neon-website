@@ -9,8 +9,8 @@ previousLink:
   title: 'PostgreSQL 19 Logical Replication Improvements'
   slug: 'postgresql-19/logical-replication-improvements'
 nextLink:
-  title: 'PostgreSQL 19 New Features'
-  slug: 'postgresql-19-new-features'
+  title: 'PostgreSQL 19 Query Improvements'
+  slug: 'postgresql-19/query-improvements'
 ---
 
 **Summary**: PostgreSQL 19 adds native JSON output support to the `COPY TO` command. You can export table data as NDJSON (one JSON object per line) or as a JSON array, with streaming output that handles large datasets without loading everything into memory.

@@ -60,7 +60,7 @@ WHERE product_id = 1;
 
 This completes PostgreSQL's SQL:2011 temporal feature set, making it suitable for booking systems, employee records, insurance policies, and any data with validity periods.
 
-### GROUP BY ALL
+### [GROUP BY ALL](/postgresql/postgresql-19/query-improvements)
 
 A convenience feature that automatically groups by every non-aggregate expression in the SELECT list:
 
@@ -78,7 +78,7 @@ GROUP BY ALL;
 
 This eliminates a common source of errors when adding or removing columns from SELECT lists.
 
-### IGNORE NULLS / RESPECT NULLS for Window Functions
+### [IGNORE NULLS / RESPECT NULLS for Window Functions](/postgresql/postgresql-19/query-improvements)
 
 SQL-standard null handling for five window functions: `lead()`, `lag()`, `first_value()`, `last_value()`, and `nth_value()`:
 
@@ -144,22 +144,6 @@ REPACK (CONCURRENTLY) orders USING INDEX orders_created_at_idx;
 
 With `CONCURRENTLY`, the `ACCESS EXCLUSIVE` lock is only held briefly during the final file swap. The table remains readable and writable for the bulk of the operation.
 
-### ALTER TABLE MERGE/SPLIT PARTITIONS
-
-New DDL commands to restructure partitions without manual data movement:
-
-```sql
--- Split a quarterly partition into months
-ALTER TABLE sales SPLIT PARTITION sales_q1 INTO (
-    PARTITION sales_jan FOR VALUES FROM ('2026-01-01') TO ('2026-02-01'),
-    PARTITION sales_feb FOR VALUES FROM ('2026-02-01') TO ('2026-03-01'),
-    PARTITION sales_mar FOR VALUES FROM ('2026-03-01') TO ('2026-04-01')
-);
-
--- Merge partitions back together
-ALTER TABLE sales MERGE PARTITIONS (sales_jan, sales_feb) INTO sales_jan_feb;
-```
-
 ## Data Export
 
 ### [JSON Format for COPY TO](/postgresql/postgresql-19/json-copy-to)
@@ -213,7 +197,7 @@ CREATE PUBLICATION prod_pub FOR ALL TABLES
 
 **Dynamic WAL level**: The `effective_wal_level` parameter adjusts automatically based on whether logical replication slots exist, eliminating the need to manually configure and restart for WAL level changes.
 
-### pg_get_*_ddl() Functions
+### [pg_get_*_ddl() Functions](/postgresql/postgresql-19/schema-management)
 
 Three new functions for programmatic DDL extraction:
 
@@ -227,7 +211,7 @@ SELECT * FROM pg_get_role_ddl('app_user');
 
 Also available: `pg_get_tablespace_ddl()`. These provide a cleaner alternative to parsing `pg_dump` output when you need DDL for specific objects.
 
-### pg_dumpall Non-Text Formats
+### [pg_dumpall Non-Text Formats](/postgresql/postgresql-19/schema-management)
 
 `pg_dumpall` now supports custom (`-Fc`), directory (`-Fd`), and tar (`-Ft`) output formats:
 
@@ -236,7 +220,7 @@ pg_dumpall -Fc -f full-dump
 pg_restore --globals-only full-dump  # restore only roles/tablespaces
 ```
 
-### 64-bit MultiXactOffset
+### [64-bit MultiXactOffset](/postgresql/postgresql-19/monitoring-operations)
 
 MultiXactOffset has been widened from 32-bit to 64-bit, eliminating the ~4 billion member wraparound limit. Previously, heavy use of row-level locking (concurrent `SELECT FOR UPDATE` across many transactions) could exhaust MultiXact member space, causing write failures that required emergency vacuuming. This risk is removed in PostgreSQL 19.
 
