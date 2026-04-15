@@ -6,8 +6,8 @@ ogImage: ''
 updatedOn: '2026-04-14T00:00:00+00:00'
 enableTableOfContents: true
 previousLink:
-  title: 'PostgreSQL 19 New Features'
-  slug: 'postgresql-19-new-features'
+  title: 'PostgreSQL 19 SQL/PGQ Graph Queries'
+  slug: 'postgresql-19/sql-pgq-graph-queries'
 nextLink:
   title: 'PostgreSQL 19 Temporal Data Operations'
   slug: 'postgresql-19/temporal-data-operations'

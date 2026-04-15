@@ -9,8 +9,8 @@ previousLink:
   title: 'PostgreSQL 19 Schema Management'
   slug: 'postgresql-19/schema-management'
 nextLink:
-  title: 'PostgreSQL 19 New Features'
-  slug: 'postgresql-19-new-features'
+  title: 'PostgreSQL 19 Parallel Autovacuum'
+  slug: 'postgresql-19/parallel-autovacuum'
 ---
 
 **Summary**: PostgreSQL 19 adds WAL full-page image tracking, vacuum progress details, per-process-type log levels, psql prompt improvements, dynamic WAL level, and eliminates the MultiXact wraparound risk with a 64-bit offset. These changes give DBAs better visibility into database operations and remove a long-standing operational hazard.

@@ -371,8 +371,10 @@
   slug: postgresql-19-new-features
   title: PostgreSQL 19
   items:
-    - section: DML & Query Improvements
+    - section: Headline Features
       items:
+        - slug: postgresql-19/sql-pgq-graph-queries
+          title: 'SQL/PGQ: Property Graph Queries'
         - slug: postgresql-19/on-conflict-do-select
           title: 'ON CONFLICT DO SELECT: Atomic Get-or-Create'
         - slug: postgresql-19/temporal-data-operations
@@ -383,6 +385,8 @@
           title: 'pg_plan_advice: Query Plan Hints'
         - slug: postgresql-19/repack-command
           title: 'REPACK: Online Table Rebuilding'
+        - slug: postgresql-19/parallel-autovacuum
+          title: 'Parallel Autovacuum'
     - section: Data & Replication
       items:
         - slug: postgresql-19/logical-replication-improvements
@@ -397,6 +401,8 @@
           title: 'Schema Management and Backup'
         - slug: postgresql-19/monitoring-operations
           title: 'Monitoring and Operations'
+        - slug: postgresql-19/breaking-changes
+          title: 'Breaking Changes and Upgrade Notes'
 - nav: PostgreSQL 18
   slug: postgresql-18-new-features
   title: PostgreSQL 18

@@ -1,29 +1,61 @@
 ---
 title: 'PostgreSQL 19 New Features'
 page_title: "PostgreSQL 19 New Features: What's New and Why It Matters"
-page_description: 'Explore PostgreSQL 19 new features including ON CONFLICT DO SELECT, temporal data operations, pg_plan_advice query hints, the REPACK command, JSON COPY TO, and logical replication improvements.'
+page_description: 'Explore PostgreSQL 19 new features including SQL/PGQ property graph queries, ON CONFLICT DO SELECT, temporal data operations, pg_plan_advice, REPACK, parallel autovacuum, and more.'
 ogImage: ''
 updatedOn: '2026-04-14T00:00:00+00:00'
 enableTableOfContents: true
 nextLink:
-  title: 'PostgreSQL 19 ON CONFLICT DO SELECT'
-  slug: 'postgresql-19/on-conflict-do-select'
+  title: 'PostgreSQL 19 SQL/PGQ Graph Queries'
+  slug: 'postgresql-19/sql-pgq-graph-queries'
 ---
 
-**Summary**: PostgreSQL 19 introduces significant features including atomic get-or-create with `ON CONFLICT DO SELECT`, temporal data operations with `FOR PORTION OF`, query plan hints via `pg_plan_advice`, the `REPACK` command for online table maintenance, native JSON export with `COPY TO`, and major logical replication improvements. This overview covers the highlights with links to detailed guides.
+**Summary**: PostgreSQL 19 is a landmark release that brings SQL/PGQ property graph queries, atomic get-or-create with `ON CONFLICT DO SELECT`, temporal data operations, query plan hints, online table repacking, parallel autovacuum, native JSON export, and logical replication improvements. This overview covers the highlights with links to detailed guides.
 
 ## Introduction
 
-PostgreSQL 19 is currently in development, with a final release expected in late 2026. This version builds on PostgreSQL 18's foundation with features that address long-standing developer requests: a proper get-or-create operation, temporal data manipulation, query plan control, and online table maintenance.
+PostgreSQL 19 is currently in development, with a feature freeze in April 2026, beta expected in mid-2026, and a final release expected in **September 2026**. This version includes one of the most significant additions in PostgreSQL history - native graph query support via the SQL:2023 standard - alongside a dozen features that address long-standing developer and operator pain points.
 
-The release focuses on four areas:
+The release spans six areas:
 
+- **Graph queries**: SQL/PGQ property graph queries on existing tables
 - **DML improvements**: New conflict handling and temporal operations
 - **Query planning**: Official plan hint support via a contrib module
-- **Maintenance**: Online table repacking without downtime
+- **Maintenance**: Online table repacking and parallel autovacuum
 - **Operations**: Better logical replication, JSON export, and monitoring
+- **Upgrades**: Breaking changes and new defaults to review
 
-Let's look at what makes PostgreSQL 19 a significant release.
+## Headline Feature: SQL/PGQ Property Graph Queries
+
+### [SQL/PGQ: Graph Queries on Existing Tables](/postgresql/postgresql-19/sql-pgq-graph-queries)
+
+PostgreSQL 19 adds SQL/PGQ (ISO SQL:2023 Part 16), bringing native graph query capabilities to PostgreSQL. You define property graphs over existing relational tables and query relationships using pattern matching syntax.
+
+```sql
+-- Define a graph over existing tables
+CREATE PROPERTY GRAPH social_graph
+  VERTEX TABLES (users LABEL person PROPERTIES (id, name))
+  EDGE TABLES (
+    follows
+      SOURCE KEY (follower_id) REFERENCES users (id)
+      DESTINATION KEY (followed_id) REFERENCES users (id)
+      LABEL follows
+  );
+
+-- Query: find friends of friends
+SELECT * FROM GRAPH_TABLE (social_graph
+    MATCH (a IS person WHERE a.name = 'Alice')
+          -[IS follows]->(b IS person)
+          -[IS follows]->(c IS person)
+    COLUMNS (b.name AS friend, c.name AS friend_of_friend)
+);
+```
+
+No new storage engine, no extensions, no data migration. Graph queries are rewritten into standard relational operations and use your existing indexes. Results compose naturally with joins, aggregations, CTEs, and everything else in SQL.
+
+<Admonition type="note">
+The initial implementation covers fixed-depth pattern matching. Variable-length paths (quantified patterns like `+`, `*`, `{2,5}`) are planned for a future release.
+</Admonition>
 
 ## DML and Query Improvements
 
@@ -143,6 +175,24 @@ REPACK (CONCURRENTLY) orders USING INDEX orders_created_at_idx;
 ```
 
 With `CONCURRENTLY`, the `ACCESS EXCLUSIVE` lock is only held briefly during the final file swap. The table remains readable and writable for the bulk of the operation.
+
+### [Parallel Autovacuum](/postgresql/postgresql-19/parallel-autovacuum)
+
+Autovacuum can now use parallel workers for index vacuuming and cleanup. On tables with multiple large indexes, this dramatically reduces vacuum time by processing indexes simultaneously instead of one at a time.
+
+```sql
+-- Enable globally (default is 0 = disabled)
+ALTER SYSTEM SET autovacuum_max_parallel_workers = 4;
+
+-- Per-table override for heavily-indexed tables
+ALTER TABLE events SET (autovacuum_parallel_workers = 6);
+```
+
+Each worker handles one index. With 4 workers and 5 indexes, the index vacuum phase completes in roughly the time of the largest single index instead of the sum of all five.
+
+<Admonition type="note">
+Parallel autovacuum is disabled by default (`autovacuum_max_parallel_workers = 0`). You must explicitly enable it to benefit.
+</Admonition>
 
 ## Data Export
 
@@ -272,8 +322,19 @@ docker run -d --name pg19 -p 5433:5432 pg19-dev
 psql -h localhost -p 5433 -U postgres
 ```
 
+## [Breaking Changes and Upgrade Notes](/postgresql/postgresql-19/breaking-changes)
+
+PostgreSQL 19 includes several changes that may affect existing applications. Review these before upgrading:
+
+- **JIT disabled by default**: The `jit` parameter now defaults to `off`. Analytics workloads that rely on JIT should explicitly re-enable it.
+- **LZ4 TOAST compression default**: New TOAST data uses LZ4 instead of pglz. Faster compression and decompression with slightly lower ratios. Existing data is unaffected.
+- **RADIUS authentication removed**: The `radius` auth method is gone entirely. Switch to LDAP, GSSAPI, or certificate auth.
+- **standard_conforming_strings forced on**: Backslash escapes in regular string literals no longer work. Use `E'...'` syntax or standard SQL `''` escaping.
+- **MD5 deprecation warnings**: Connecting with MD5-hashed passwords now emits warnings. Migrate to SCRAM-SHA-256.
+- **max_locks_per_transaction doubled**: Default changed from 64 to 128.
+
 ## Looking Ahead
 
-PostgreSQL 19 addresses several long-standing community requests. `ON CONFLICT DO SELECT` solves a problem that has existed since PostgreSQL 9.5. `FOR PORTION OF` completes the SQL:2011 temporal feature set. `pg_plan_advice` breaks new ground for PostgreSQL by providing official plan hints. And `REPACK (CONCURRENTLY)` brings online table maintenance into core, eliminating the need for external extensions.
+PostgreSQL 19 is one of the most feature-rich releases in recent history. SQL/PGQ brings graph query capabilities that previously required a separate database. `ON CONFLICT DO SELECT` solves a problem that has existed since PostgreSQL 9.5. `FOR PORTION OF` completes the SQL:2011 temporal feature set. `pg_plan_advice` breaks new ground for PostgreSQL by providing official plan hints. `REPACK (CONCURRENTLY)` brings online table maintenance into core. And parallel autovacuum addresses one of the biggest pain points for large database operators.
 
 The final release is expected in late 2026. We will update this page and the individual feature guides as the release progresses.
