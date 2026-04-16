@@ -274,7 +274,21 @@ pg_restore --globals-only full-dump  # restore only roles/tablespaces
 
 MultiXactOffset has been widened from 32-bit to 64-bit, eliminating the ~4 billion member wraparound limit. Previously, heavy use of row-level locking (concurrent `SELECT FOR UPDATE` across many transactions) could exhaust MultiXact member space, causing write failures that required emergency vacuuming. This risk is removed in PostgreSQL 19.
 
-## Monitoring Improvements
+## Monitoring and Operations Improvements
+
+### [Online Data Checksums](/postgresql/postgresql-19/monitoring-operations)
+
+You can now enable or disable data checksums on a running cluster without downtime:
+
+```sql
+-- Enable checksums online (cluster stays accessible)
+SELECT pg_enable_data_checksums(cost_delay := 10, cost_limit := 1000);
+
+-- Monitor progress
+SHOW data_checksums;  -- 'off' -> 'inprogress-on' -> 'on'
+```
+
+Previously, enabling checksums on an existing cluster required shutting down the server or a full data reload. The `cost_delay` and `cost_limit` parameters let you throttle the IO impact on production systems.
 
 ### WAL Statistics
 

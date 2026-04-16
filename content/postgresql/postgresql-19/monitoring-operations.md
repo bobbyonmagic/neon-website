@@ -1,7 +1,7 @@
 ---
 title: 'PostgreSQL 19 Monitoring and Operations'
 page_title: 'PostgreSQL 19 Monitoring and Operations Improvements'
-page_description: 'Learn about PostgreSQL 19 monitoring and operational improvements including WAL statistics, vacuum progress tracking, per-process logging, psql enhancements, and 64-bit MultiXactOffset.'
+page_description: 'Learn about PostgreSQL 19 monitoring and operational improvements including online data checksums, WAL statistics, vacuum progress tracking, per-process logging, psql enhancements, and 64-bit MultiXactOffset.'
 ogImage: ''
 updatedOn: '2026-04-14T00:00:00+00:00'
 enableTableOfContents: true
@@ -13,7 +13,70 @@ nextLink:
   slug: 'postgresql-19/parallel-autovacuum'
 ---
 
-**Summary**: PostgreSQL 19 adds WAL full-page image tracking, vacuum progress details, per-process-type log levels, psql prompt improvements, dynamic WAL level, and eliminates the MultiXact wraparound risk with a 64-bit offset. These changes give DBAs better visibility into database operations and remove a long-standing operational hazard.
+**Summary**: PostgreSQL 19 adds online data checksum management, WAL full-page image tracking, vacuum progress details, per-process-type log levels, psql prompt improvements, dynamic WAL level, and eliminates the MultiXact wraparound risk with a 64-bit offset. These changes give DBAs better visibility into database operations and remove long-standing operational hazards.
+
+## Online Data Checksum Enable/Disable
+
+PostgreSQL 19 lets you enable or disable data checksums on a running cluster. Previously, checksums could only be set during `initdb` or offline using `pg_checksums` with the server shut down. For large databases, this meant hours of downtime or a full re-initdb with data reload.
+
+Two new SQL-callable functions handle this:
+
+### Enabling Checksums
+
+```sql
+-- Enable checksums with default throttling
+SELECT pg_enable_data_checksums();
+
+-- Enable with custom throttling (similar to vacuum cost parameters)
+SELECT pg_enable_data_checksums(
+    cost_delay := 10,   -- milliseconds to sleep between page writes
+    cost_limit := 1000  -- pages to process before sleeping
+);
+```
+
+The function starts a background worker that marks all shared buffers dirty, causing checksums to be written on the next page flush. The cluster transitions through an `inprogress-on` state before checksums are fully active:
+
+```sql
+-- Monitor progress
+SHOW data_checksums;
+-- Values: 'off' -> 'inprogress-on' -> 'on'
+```
+
+The cluster remains fully accessible throughout the process. Reads and writes continue normally while the background worker processes pages.
+
+### Disabling Checksums
+
+```sql
+SELECT pg_disable_data_checksums();
+```
+
+This transitions through `inprogress-off` before reaching `off`. Disabling is faster since it only needs to update the control file and stop verifying checksums on reads.
+
+### Throttling the IO Impact
+
+The `cost_delay` and `cost_limit` parameters work like vacuum cost-based delay. On busy production systems, increase `cost_delay` to spread the work over a longer period:
+
+```sql
+-- Gentle approach for production (takes longer but minimal IO impact)
+SELECT pg_enable_data_checksums(cost_delay := 20, cost_limit := 500);
+
+-- Aggressive approach for maintenance windows
+SELECT pg_enable_data_checksums(cost_delay := 0, cost_limit := 10000);
+```
+
+### Why This Matters
+
+Many long-running PostgreSQL clusters were initialized years ago without checksums. Until now, enabling checksums on these clusters required one of:
+
+- Shutting down the server and running `pg_checksums --enable` (hours of downtime for large databases)
+- Performing a full `pg_dump` and `pg_restore` into a new cluster with checksums enabled
+- Living without checksums and risking silent data corruption
+
+With online checksums, you can enable this protection on a running production database with zero downtime.
+
+<Admonition type="note">
+PostgreSQL 19 also enables data checksums by default for new clusters created with `initdb`. Existing clusters upgrading via `pg_upgrade` retain their previous checksum setting.
+</Admonition>
 
 ## WAL Monitoring: Full-Page Image Tracking
 
