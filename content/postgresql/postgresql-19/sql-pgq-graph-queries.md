@@ -199,16 +199,22 @@ EXPLAIN SELECT * FROM GRAPH_TABLE (social_graph
 
 The plan will show joins between the `users` and `follows` tables, using whatever indexes are available. There is no special graph execution engine.
 
-## Managing Property Graphs
+## Managing property graphs
 
-### Listing Graphs
+Property graphs are schema objects like views. They can be listed, altered, and dropped with standard commands.
+
+### Listing graphs
 
 ```sql
 -- In psql
 \dG
 
--- Or query the catalog
-SELECT * FROM pg_property_graph;
+-- The property graph metadata is split across several system catalogs.
+-- These are the ones you usually want to look at:
+SELECT * FROM pg_propgraph_element;       -- vertex + edge tables
+SELECT * FROM pg_propgraph_label;         -- labels
+SELECT * FROM pg_propgraph_label_property; -- labels → properties
+SELECT * FROM pg_propgraph_property;      -- property expressions
 ```
 
 ### Altering a Graph
@@ -230,9 +236,11 @@ DROP PROPERTY GRAPH social_graph;
 
 Dropping a graph only removes the graph definition. The underlying tables are not affected.
 
-## Practical Use Cases
+## Practical use cases
 
-### Dependency Tracking
+A few patterns where a property graph view over existing tables makes for clearer queries than multi-level self joins.
+
+### Dependency tracking
 
 ```sql
 CREATE TABLE packages (
@@ -325,4 +333,4 @@ The biggest advantage of SQL/PGQ: it works on your existing tables with your exi
 
 ## Summary
 
-SQL/PGQ is one of the most significant features in PostgreSQL 19. It brings standards-based graph query capabilities to PostgreSQL without requiring data migration, extensions, or a separate database. The initial implementation covers fixed-depth pattern matching, which handles many common graph query use cases. Variable-length path support is expected in a future release. The feature was committed on March 16, 2026 by Peter Eisentraut and Ashutosh Bapat.
+SQL/PGQ brings standards-based graph query capabilities to PostgreSQL without requiring data migration, extensions, or a separate database. The initial implementation covers fixed-depth pattern matching, which handles many common graph query use cases. Variable-length path support is expected in a future release.

@@ -43,12 +43,17 @@ Each row is a complete, executable SQL statement. The first row is the CREATE st
 
 **Options:**
 
-```sql
--- Include owner information (default: true)
-SELECT * FROM pg_get_database_ddl('myapp', 'owner');
+Options are passed as alternating `name, value` text pairs after the database argument. Supported options: `pretty` (boolean), `owner` (boolean), `tablespace` (boolean).
 
--- Pretty print (adds formatting)
-SELECT * FROM pg_get_database_ddl('myapp', 'pretty');
+```sql
+-- Disable owner output
+SELECT * FROM pg_get_database_ddl('myapp', 'owner', 'false');
+
+-- Pretty-printed output
+SELECT * FROM pg_get_database_ddl('myapp', 'pretty', 'true');
+
+-- Combine multiple options
+SELECT * FROM pg_get_database_ddl('myapp', 'pretty', 'true', 'tablespace', 'false');
 ```
 
 ### pg_get_role_ddl()
@@ -72,12 +77,14 @@ The first row is the CREATE ROLE statement with all role attributes (LOGIN, SUPE
 
 **Options:**
 
-```sql
--- Include memberships (default: true)
-SELECT * FROM pg_get_role_ddl('app_user', 'memberships');
+Options are passed as alternating `name, value` text pairs after the role argument. Supported options: `pretty` (boolean) and `memberships` (boolean, defaults to true).
 
--- Without memberships
-SELECT * FROM pg_get_role_ddl('app_user');
+```sql
+-- Omit GRANT statements for role memberships
+SELECT * FROM pg_get_role_ddl('app_user', 'memberships', 'false');
+
+-- Pretty-printed output
+SELECT * FROM pg_get_role_ddl('app_user', 'pretty', 'true');
 ```
 
 <Admonition type="note">
@@ -103,33 +110,33 @@ SELECT * FROM pg_get_tablespace_ddl('fast_storage');
 
 ### Practical Use Cases
 
-#### Schema Auditing
+#### Schema auditing
 
 Compare the current state of roles across environments:
 
 ```sql
 -- Export all role DDL for comparison
-SELECT r.rolname, d.*
+SELECT r.rolname, d.ddl
 FROM pg_roles r
-CROSS JOIN LATERAL pg_get_role_ddl(r.rolname) d
+CROSS JOIN LATERAL pg_get_role_ddl(r.rolname::regrole) AS d(ddl)
 WHERE r.rolname NOT LIKE 'pg_%'
 ORDER BY r.rolname;
 ```
 
-#### Migration Scripts
+#### Migration scripts
 
-Generate DDL for specific databases without running pg_dump:
+Generate DDL for specific databases without running `pg_dump`:
 
 ```sql
 -- Generate a migration script for a database
 \t on
 \o /tmp/recreate_myapp.sql
-SELECT * FROM pg_get_database_ddl('myapp', 'pretty', 'owner');
+SELECT * FROM pg_get_database_ddl('myapp', 'pretty', 'true');
 \o
 \t off
 ```
 
-#### Configuration Drift Detection
+#### Configuration drift detection
 
 Store DDL snapshots and compare them over time:
 
@@ -143,8 +150,8 @@ CREATE TABLE ddl_snapshots (
 );
 
 INSERT INTO ddl_snapshots (object_type, object_name, ddl_line)
-SELECT 'database', 'myapp', pg_get_database_ddl
-FROM pg_get_database_ddl('myapp');
+SELECT 'database', 'myapp', ddl
+FROM pg_get_database_ddl('myapp') AS t(ddl);
 ```
 
 ## pg_dumpall Non-Text Output Formats
@@ -227,4 +234,4 @@ pg_restore --dbname=myapp cluster_backup
 
 ## Summary
 
-The pg_get_*_ddl() functions and pg_dumpall improvements address a gap in PostgreSQL's schema management tooling. DDL extraction no longer requires parsing text output from pg_dump. Cluster-wide backups now support the same flexible formats that per-database backups have had for years. Both features were committed in early 2026 by Andrew Dunstan and Mahendra Singh Thalor.
+The `pg_get_*_ddl()` functions and `pg_dumpall` improvements address a gap in PostgreSQL's schema management tooling. DDL extraction no longer requires parsing text output from `pg_dump`. Cluster-wide backups now support the same flexible formats that per-database backups have had for years.

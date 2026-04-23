@@ -86,7 +86,7 @@ ORDER BY total DESC;
 
 ## IGNORE NULLS and RESPECT NULLS for Window Functions
 
-PostgreSQL 19 adds the SQL-standard `IGNORE NULLS` and `RESPECT NULLS` options to five window functions. This is a significant improvement for time-series data, sensor readings, and any dataset with gaps.
+PostgreSQL 19 adds the SQL-standard `IGNORE NULLS` and `RESPECT NULLS` options to five window functions. This matters for time-series data, sensor readings, and any dataset with gaps.
 
 ### Supported Functions
 

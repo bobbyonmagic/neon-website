@@ -191,9 +191,11 @@ This is why `RETURNING` is mandatory with `DO SELECT`. Without it, the operation
 A plain `RETURNING *` returns the existing row's columns as-is on the select path. Since no modification takes place, there is no difference between "old" and "new" values. PostgreSQL 19 also adds `OLD`/`NEW` aliases to `RETURNING` (enhanced in PostgreSQL 18), but for `DO SELECT` you do not need them.
 </Admonition>
 
-## Practical Use Cases
+## Practical use cases
 
-### Idempotent API Endpoints
+`ON CONFLICT DO SELECT` is a good fit anywhere you previously wrote a two-step "INSERT then SELECT" or relied on a CTE trick to return the pre-existing row. A few patterns where it tightens the code:
+
+### Idempotent API endpoints
 
 An API that creates a resource but needs to handle retries gracefully:
 
@@ -251,4 +253,4 @@ A few things to keep in mind when using `DO SELECT`:
 
 ## Summary
 
-`ON CONFLICT DO SELECT` fills a gap that has existed since `ON CONFLICT` was introduced in PostgreSQL 9.5. It gives you atomic get-or-create semantics in a single statement, without the dead tuple overhead of `DO UPDATE` or the complexity of CTE workarounds. The feature was committed on February 12, 2026 by Dean Rasheed, based on work by Andreas Karlsson, Marko Tiikkaja, and Viktor Holmberg, after 26 patch revisions over multiple years.
+`ON CONFLICT DO SELECT` fills a gap that has existed since `ON CONFLICT` was introduced in PostgreSQL 9.5. It gives you atomic get-or-create semantics in a single statement, without the dead tuple overhead of `DO UPDATE` or the complexity of CTE workarounds.

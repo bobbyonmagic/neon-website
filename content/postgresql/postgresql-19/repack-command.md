@@ -23,9 +23,11 @@ For small tables, that is fine. For a 100GB table in production, it means downti
 
 PostgreSQL 19 adds `REPACK`, which combines both operations into one command and adds a `CONCURRENTLY` mode that holds the exclusive lock only briefly at the end. The table stays accessible during most of the operation.
 
-## Basic Usage
+## Basic usage
 
-### Reclaim Space
+The simplest invocation rewrites a single table. Without `CONCURRENTLY`, `REPACK` takes an `ACCESS EXCLUSIVE` lock for the full rewrite.
+
+### Reclaim space
 
 Rewrite a table to eliminate dead tuples and return space to the OS:
 
@@ -152,9 +154,11 @@ The `pg_repack` extension has provided online table repacking for years. Postgre
 
 If you have been using pg_repack, the built-in REPACK provides the same capability without the extension dependency.
 
-## Practical Examples
+## Practical examples
 
-### Reclaiming Space After Bulk Deletes
+Two common maintenance patterns where `REPACK` replaces a more awkward sequence of commands.
+
+### Reclaiming space after bulk deletes
 
 After deleting a large number of rows, `VACUUM` reclaims space within pages but does not shrink the table file. `REPACK` rewrites the table to its minimal size:
 
@@ -216,4 +220,4 @@ REPACK (CONCURRENTLY) orders_2025_q2;
 
 ## Summary
 
-The `REPACK` command unifies `VACUUM FULL` and `CLUSTER` into a single command with the addition of an online `CONCURRENTLY` mode. For production databases where downtime is not acceptable, `REPACK (CONCURRENTLY)` is a significant improvement over the existing options. The feature was committed on March 10, 2026 by Antonin Houska and Alvaro Herrera.
+The `REPACK` command unifies `VACUUM FULL` and `CLUSTER` into a single command with the addition of an online `CONCURRENTLY` mode. For production databases where downtime is not acceptable, `REPACK (CONCURRENTLY)` is the first in-core way to reclaim space without taking the table offline.

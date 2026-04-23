@@ -34,7 +34,9 @@ The heap scanning and heap vacuuming phases remain single-threaded. Parallel wor
 
 ## Configuration
 
-### Global Setting
+Parallel autovacuum is controlled by one cluster-wide GUC and one per-table storage parameter. Both default to disabled.
+
+### Global setting
 
 ```sql
 -- postgresql.conf or ALTER SYSTEM
@@ -127,9 +129,11 @@ FROM pg_stat_progress_vacuum;
 
 Parallel workers do not get their own rows in this view. The progress information is aggregated under the leader process.
 
-## Practical Configuration
+## Practical configuration
 
-### Small Database (< 50 GB)
+Typical settings by database size. These are starting points, not hard rules. The right numbers depend on how many indexes your tables have and how much CPU headroom the box has during autovacuum windows.
+
+### Small database (< 50 GB)
 
 Parallel autovacuum is likely unnecessary. The default of 0 is fine:
 

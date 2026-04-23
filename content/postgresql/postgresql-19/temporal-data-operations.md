@@ -135,9 +135,11 @@ WHERE product_id = 3;
 
 `NULL` as the end value means "no upper bound" - it extends to the end of the row's range.
 
-## Real-World Use Cases
+## Real-world use cases
 
-### Employee Salary History
+A few concrete patterns that previously needed helper queries or CTE tricks and now fit into a single `UPDATE` or `DELETE`.
+
+### Employee salary history
 
 ```sql
 CREATE TABLE employee_salaries (
@@ -230,4 +232,4 @@ Ensure you have appropriate indexes on the range columns, which the `WITHOUT OVE
 
 ## Summary
 
-`UPDATE/DELETE FOR PORTION OF` completes PostgreSQL's SQL:2011 temporal data support. Combined with the `WITHOUT OVERLAPS` constraints from PostgreSQL 18, you now have a complete toolkit for temporal data: integrity constraints to prevent overlapping periods, and DML operations that correctly split rows when modifying a sub-period. The feature was committed on April 1, 2026 by Paul A. Jungwirth and Peter Eisentraut.
+`UPDATE/DELETE FOR PORTION OF` completes PostgreSQL's SQL:2011 temporal data support. Combined with the `WITHOUT OVERLAPS` constraints from PostgreSQL 18, you now have a complete toolkit for temporal data: integrity constraints to prevent overlapping periods, and DML operations that correctly split rows when modifying a sub-period.

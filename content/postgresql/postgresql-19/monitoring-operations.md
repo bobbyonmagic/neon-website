@@ -75,7 +75,7 @@ Many long-running PostgreSQL clusters were initialized years ago without checksu
 With online checksums, you can enable this protection on a running production database with zero downtime.
 
 <Admonition type="note">
-PostgreSQL 19 also enables data checksums by default for new clusters created with `initdb`. Existing clusters upgrading via `pg_upgrade` retain their previous checksum setting.
+Starting in PostgreSQL 18, `initdb` enables data checksums by default for new clusters. Pass `--no-data-checksums` to opt out. Existing clusters upgrading via `pg_upgrade` retain their previous checksum setting.
 </Admonition>
 
 ## WAL Monitoring: Full-Page Image Tracking

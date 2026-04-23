@@ -14,7 +14,7 @@ nextLink:
 
 ## Introduction
 
-PostgreSQL 19 is currently in development, with a feature freeze in April 2026, beta expected in mid-2026, and a final release expected in **September 2026**. This version includes one of the most significant additions in PostgreSQL history - native graph query support via the SQL:2023 standard - alongside a dozen features that address long-standing developer and operator pain points.
+PostgreSQL 19 is currently in development, with a feature freeze in April 2026, beta expected in mid-2026, and a final release expected in late 2026. The headline addition is native graph query support via the SQL:2023 standard, alongside a dozen features that address long-standing developer and operator pain points.
 
 The release spans six areas:
 
@@ -343,12 +343,16 @@ PostgreSQL 19 includes several changes that may affect existing applications. Re
 - **JIT disabled by default**: The `jit` parameter now defaults to `off`. Analytics workloads that rely on JIT should explicitly re-enable it.
 - **LZ4 TOAST compression default**: New TOAST data uses LZ4 instead of pglz. Faster compression and decompression with slightly lower ratios. Existing data is unaffected.
 - **RADIUS authentication removed**: The `radius` auth method is gone entirely. Switch to LDAP, GSSAPI, or certificate auth.
-- **standard_conforming_strings forced on**: Backslash escapes in regular string literals no longer work. Use `E'...'` syntax or standard SQL `''` escaping.
+- **standard_conforming_strings forced on**: Backslash escapes in regular string literals no longer work. Use `E'...'` syntax or standard SQL `''` escaping. `escape_string_warning` was also removed because it has nothing to warn about.
 - **MD5 deprecation warnings**: Connecting with MD5-hashed passwords now emits warnings. Migrate to SCRAM-SHA-256.
 - **max_locks_per_transaction doubled**: Default changed from 64 to 128.
+- **MULE_INTERNAL encoding removed**: `pg_upgrade` refuses to migrate clusters that still use it.
+- **btree_gist inet/cidr opclasses retired**: Indexes built on `gist_inet_ops` or `gist_cidr_ops` must be dropped before upgrade. They are known to return wrong results and `pg_upgrade` blocks the migration.
+- **CR and LF disallowed in database, role, and tablespace names**: `pg_upgrade` blocks clusters containing any such names.
+- **`log_lock_waits` enabled by default**: Servers that previously ran with the default now emit log entries for long lock waits.
+- **Wait event class `BUFFERPIN` renamed to `BUFFER`**: Update monitoring that filters on the old name.
+- **`postgres_fdw` now respects local READ ONLY**: Transactions declared `READ ONLY` no longer allow writes through foreign tables.
 
-## Looking Ahead
+## Summary
 
 PostgreSQL 19 is one of the most feature-rich releases in recent history. SQL/PGQ brings graph query capabilities that previously required a separate database. `ON CONFLICT DO SELECT` solves a problem that has existed since PostgreSQL 9.5. `FOR PORTION OF` completes the SQL:2011 temporal feature set. `pg_plan_advice` breaks new ground for PostgreSQL by providing official plan hints. `REPACK (CONCURRENTLY)` brings online table maintenance into core. And parallel autovacuum addresses one of the biggest pain points for large database operators.
-
-The final release is expected in late 2026. We will update this page and the individual feature guides as the release progresses.

@@ -87,9 +87,11 @@ If you find RADIUS entries, switch to one of these alternatives:
 - **Certificate authentication**: For service-to-service connections.
 - **SCRAM-SHA-256**: For password-based authentication without external systems.
 
-## String Handling Changes
+## String handling changes
 
-### standard_conforming_strings Forced On
+Two changes to how the server handles string literals. Most applications on modern drivers are already unaffected, but legacy code that depends on backslash escapes or the old warning behavior may need small updates.
+
+### standard_conforming_strings forced on
 
 The `standard_conforming_strings` parameter is now hardcoded to `on` and read-only. Previously it defaulted to `on` (since PostgreSQL 9.1) but could be set to `off`.
 
@@ -163,31 +165,85 @@ Modern schemas with partitioned tables frequently exceeded the old limit of 64 l
 
 The increase means slightly more shared memory usage. If you were already running with a custom value higher than 128, no change is needed.
 
-## Other Removed Parameters
+## MULE_INTERNAL encoding removed
 
-Several GUCs have been removed in PostgreSQL 19. If any of these appear in your `postgresql.conf`, remove them before starting the new cluster:
+PostgreSQL 19 removes support for the `MULE_INTERNAL` server and client encoding (commit `77645d44`). Databases or connections using this encoding will fail to start or connect on the new version.
 
-| Parameter | Status | Notes |
-|---|---|---|
-| `escape_string_warning` | Removed | No longer needed (standard_conforming_strings is always on) |
-| `lo_compat_privileges` | Removed | Large object privilege compatibility mode gone |
-| `array_nulls` | Removed | Always treats NULL as null in array input now |
+If you are using `MULE_INTERNAL`, dump the affected databases on the old server, reload them on the new server under a different encoding (typically `UTF8`), and update any client configuration that expects `MULE_INTERNAL`.
 
-## Pre-Upgrade Checklist
+```bash
+# Check which databases still use MULE_INTERNAL
+psql -c "SELECT datname, pg_encoding_to_char(encoding) FROM pg_database;"
+```
+
+`pg_upgrade` detects and refuses to migrate clusters containing `MULE_INTERNAL` databases, so you will not silently lose data. The upgrade fails up front.
+
+## btree_gist inet/cidr indexes must be dropped before upgrading
+
+PostgreSQL 19 marks the `gist_inet_ops` and `gist_cidr_ops` opclasses from the `btree_gist` extension as non-default and starts deprecating them. They are known to incorrectly exclude matching rows and can silently return wrong results. `pg_upgrade` refuses to migrate any cluster that still has indexes built on them (commit `b3b0b457`).
+
+Find and drop affected indexes before upgrading:
+
+```sql
+SELECT n.nspname, c.relname
+FROM pg_index i
+JOIN pg_class c ON c.oid = i.indexrelid
+JOIN pg_namespace n ON n.oid = c.relnamespace
+JOIN pg_opclass o ON o.oid = ANY(i.indclass)
+WHERE o.opcname IN ('gist_inet_ops', 'gist_cidr_ops');
+
+-- Drop each and re-create using a regular B-tree or a GiST index
+-- built on the native inet GiST support instead.
+```
+
+## CR and LF disallowed in database, role, and tablespace names
+
+Database, role, and tablespace names can no longer contain carriage returns or line feeds (commit `b380a56a`). This closes a small set of security issues where such characters could alter downstream tooling output.
+
+`pg_upgrade` refuses to migrate clusters that contain any such names. The check is up front, so you will not get halfway through an upgrade before hitting it.
+
+## BUFFERPIN wait event class renamed to BUFFER
+
+The wait event class previously named `BUFFERPIN` has been renamed to `BUFFER` (commit `6c5c393b`). If you have monitoring dashboards, alerts, or scripts that filter `pg_stat_activity.wait_event_type` by the literal string `BUFFERPIN`, update them to look for `BUFFER` instead.
+
+## postgres_fdw now propagates READ ONLY
+
+A `READ ONLY` transaction in PostgreSQL 19 propagates its mode to `postgres_fdw` sessions (commit `de28140d`). Previously, a local `READ ONLY` transaction could still modify foreign data through functions on the remote side.
+
+This is strictly safer behavior, but applications that relied on a local `READ ONLY` wrapper while still writing to foreign tables will break. The fix is to remove the `READ ONLY` from transactions that legitimately need to write to foreign tables.
+
+## Removed and changed parameters
+
+The server variable `escape_string_warning` has been removed because `standard_conforming_strings` can no longer be turned off, so the warning has nothing to warn about. The older `lo_compat_privileges` and `array_nulls` GUCs are still present in PostgreSQL 19. They were not removed.
+
+If `escape_string_warning` appears in your `postgresql.conf`, remove the line before starting the new cluster.
+
+## Pre-upgrade checklist
 
 Before upgrading to PostgreSQL 19:
 
 ```bash
-# 1. Check for removed GUCs in your config
-grep -E 'escape_string_warning|lo_compat_privileges|array_nulls' postgresql.conf
+# 1. Check for the removed GUC in your config
+grep -E 'escape_string_warning' postgresql.conf
 
-# 2. Check for RADIUS auth
+# 2. Check for RADIUS auth (removed in 19)
 grep -i radius pg_hba.conf
 
 # 3. Check for MD5 auth (still works but will warn)
 grep -i md5 pg_hba.conf
 
-# 4. Check if you rely on JIT
+# 4. Check for btree_gist indexes on inet / cidr. pg_upgrade refuses
+#    to migrate clusters that still have these.
+psql -c "
+SELECT n.nspname, c.relname
+FROM pg_index i
+JOIN pg_class c ON c.oid = i.indexrelid
+JOIN pg_namespace n ON n.oid = c.relnamespace
+JOIN pg_opclass o ON o.oid = ANY(i.indclass)
+WHERE o.opcname IN ('gist_inet_ops', 'gist_cidr_ops');
+"
+
+# 5. Check if you rely on JIT (disabled by default in 19)
 psql -c "SHOW jit;"
 ```
 

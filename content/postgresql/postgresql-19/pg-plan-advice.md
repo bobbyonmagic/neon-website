@@ -161,9 +161,11 @@ Each hint in the output is annotated with one of:
 
 This feedback loop is what separates pg_plan_advice from traditional hint systems. You know immediately whether your advice is doing what you intended.
 
-## Practical Examples
+## Practical examples
 
-### Stabilizing a Critical Query
+Two common scenarios where `pg_plan_advice` earns its keep: locking in a known-good plan for a critical query, and forcing a better plan when the optimizer's estimates are off.
+
+### Stabilizing a critical query
 
 After a statistics update causes a query plan regression:
 
@@ -232,4 +234,4 @@ pg_plan_advice is a diagnostic and stabilization tool, not a permanent solution 
 
 ## Summary
 
-`pg_plan_advice` brings query plan hints to PostgreSQL in a way that addresses the historical concerns about hint systems. By keeping advice external to query text, providing a generate-then-replay workflow, and including a feedback mechanism, it gives DBAs a practical tool for plan stabilization and debugging without the maintenance burden of embedded hints. The module was committed on March 12, 2026 by Robert Haas.
+`pg_plan_advice` brings query plan hints to PostgreSQL in a way that addresses the historical concerns about hint systems. By keeping advice external to query text, providing a generate-then-replay workflow, and including a feedback mechanism, it gives DBAs a practical tool for plan stabilization and debugging without the maintenance burden of embedded hints.

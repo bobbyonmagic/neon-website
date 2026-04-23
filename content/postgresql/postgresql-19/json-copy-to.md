@@ -21,9 +21,11 @@ Exporting PostgreSQL data as JSON has always been possible, but the workarounds 
 
 PostgreSQL 19 adds `FORMAT JSON` as a native COPY format. The output is clean, streaming JSON with no double-escaping issues and constant memory usage regardless of table size.
 
-## Basic Usage
+## Basic usage
 
-### NDJSON Output (Default)
+`COPY ... TO` with `FORMAT JSON` writes one JSON object per row. By default the rows are emitted as newline-delimited JSON (NDJSON); the optional `FORCE_ARRAY` flag wraps them in a single JSON array.
+
+### NDJSON output (default)
 
 Export a table as newline-delimited JSON (NDJSON), where each line is a complete JSON object:
 
@@ -152,9 +154,11 @@ Native JSON output is streaming (constant memory), produces clean JSON objects, 
 | `json_agg()` | No | Clean | Proportional to result |
 | `FORMAT JSON` (new) | Yes | Clean | Constant |
 
-## Practical Use Cases
+## Practical use cases
 
-### ETL Pipeline Export
+These are the places where native `FORMAT JSON` output replaces something that previously needed a helper query or post-processing step.
+
+### ETL pipeline export
 
 Export data for processing by external ETL tools:
 
@@ -222,4 +226,4 @@ SQL NULL and JSON null are indistinguishable in the output. If your application 
 
 ## Summary
 
-`FORMAT JSON` in `COPY TO` gives PostgreSQL native, streaming JSON export capability. NDJSON output works with most modern data tools out of the box, and `FORCE_ARRAY` covers cases where a JSON array wrapper is needed. The feature was committed on March 20, 2026 by Andrew Dunstan, based on work by Joe Conway and Jian He.
+`FORMAT JSON` in `COPY TO` gives PostgreSQL native, streaming JSON export capability. NDJSON output works with most modern data tools out of the box, and `FORCE_ARRAY` covers cases where a JSON array wrapper is needed.
